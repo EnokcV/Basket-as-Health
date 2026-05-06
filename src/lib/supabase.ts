@@ -5,6 +5,10 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+export const isSupabaseConfigured = () => {
+  return supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('your_')
+}
+
 export const DATABASE_SCHEMA = `
 -- Users table
 CREATE TABLE public.profiles (

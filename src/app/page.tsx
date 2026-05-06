@@ -17,6 +17,7 @@ interface Post {
   username: string
   location: string
   imageUrl: string
+  contentType: 'calories' | 'brain' | 'community' | 'mission'
   caption: string
   likes: number
   time: string
@@ -34,12 +35,12 @@ interface Profile {
 }
 
 const demoStories: Story[] = [
-  { id: '1', username: 'your story', avatar: 'BH', hasStory: false, watched: false },
-  { id: '2', username: 'fitcoach', avatar: 'FC', hasStory: true, watched: false },
-  { id: '3', username: 'nutri.team', avatar: 'NT', hasStory: true, watched: false },
-  { id: '4', username: 'pro.training', avatar: 'PT', hasStory: true, watched: false },
-  { id: '5', username: 'youthHoops', avatar: 'YTF', hasStory: true, watched: false },
-  { id: '6', username: 'healthrun', avatar: 'HR', hasStory: false, watched: true },
+  { id: '1', username: 'your story', avatar: '', hasStory: false, watched: false },
+  { id: '2', username: 'fitcoach', avatar: '/stories/fitcoach.jpg', hasStory: true, watched: false },
+  { id: '3', username: 'nutri.team', avatar: '/stories/nutri-team.jpg', hasStory: true, watched: false },
+  { id: '4', username: 'pro.training', avatar: '/stories/pro-training.jpg', hasStory: true, watched: false },
+  { id: '5', username: 'youthHoops', avatar: '/stories/youth-hoops.jpg', hasStory: true, watched: false },
+  { id: '6', username: 'healthrun', avatar: '', hasStory: false, watched: true },
 ]
 
 const demoPosts: Post[] = [
@@ -47,7 +48,8 @@ const demoPosts: Post[] = [
     id: '1',
     username: 'basketballashealth',
     location: 'Professional Court',
-    imageUrl: 'calories',
+    imageUrl: '/posts/calories.jpg',
+    contentType: 'calories',
     caption: "One hour of competitive basketball burns 650+ calories — more than running or cycling. That's the power of interval-based sport. 🏀 #BelieveThat #BasketballHealth",
     likes: 2847,
     time: '2 hours ago',
@@ -58,7 +60,8 @@ const demoPosts: Post[] = [
     id: '2',
     username: 'basketballashealth',
     location: 'Research Lab',
-    imageUrl: 'brain',
+    imageUrl: '/posts/brain.jpg',
+    contentType: 'brain',
     caption: 'Basketball develops executive function, spatial awareness, and decision-making skills. Sport is not just exercise — it\'s cognitive development in motion. 🏀 #BasketballAsHealth #CognitiveHealth',
     likes: 3291,
     time: '5 hours ago',
@@ -69,7 +72,8 @@ const demoPosts: Post[] = [
     id: '3',
     username: 'basketballashealth',
     location: 'Global Community',
-    imageUrl: 'community',
+    imageUrl: '/posts/community.jpg',
+    contentType: 'community',
     caption: 'Our community is growing strong! Every child deserves access to basketball as a pathway to lifelong health. Join the movement. 🌐 #BasketballAsHealth #Community',
     likes: 4128,
     time: '8 hours ago',
@@ -80,7 +84,8 @@ const demoPosts: Post[] = [
     id: '4',
     username: 'basketballashealth',
     location: 'Mission Statement',
-    imageUrl: 'mission',
+    imageUrl: '/posts/mission.jpg',
+    contentType: 'mission',
     caption: 'Our vision: A world where every child has access to basketball as a pathway to lifelong health. Our mission: Transform lives through basketball by integrating sport with health education. 🏀 #BelieveThat #Vision #Mission',
     likes: 5203,
     time: '12 hours ago',
@@ -95,7 +100,7 @@ const demoProfile: Profile = {
   following: 1203,
   name: 'Basketball as Health',
   bio: '🏀 Sport for Life\n\nWe believe basketball is the complete system for physical health & cognitive development.\n\nVision: A world where every child has access to basketball as a pathway to lifelong health.\n\nMission: To transform lives through basketball by integrating sport with health education.',
-  avatar: 'BH',
+  avatar: '/profile/avatar.jpg',
 }
 
 export default function Home() {
@@ -103,6 +108,11 @@ export default function Home() {
   const [posts, setPosts] = useState<Post[]>(demoPosts)
   const [profile] = useState<Profile>(demoProfile)
   const [loading, setLoading] = useState(false)
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({})
+
+  const handleImageError = (postId: string) => {
+    setImageErrors(prev => ({ ...prev, [postId]: true }))
+  }
 
   const toggleLike = (postId: string) => {
     setPosts(posts.map(post => {
@@ -132,7 +142,11 @@ export default function Home() {
         {stories.map(story => (
           <Link key={story.id} href={`/story/${story.id}`} className="story-item">
             <div className={`story-ring ${story.hasStory && !story.watched ? 'has-story' : ''} ${story.watched ? 'watched' : ''}`}>
-              <div className="story-avatar">{story.avatar}</div>
+              {story.avatar ? (
+                <img src={story.avatar} alt={story.username} className="story-avatar-img" />
+              ) : (
+                <div className="story-avatar">BH</div>
+              )}
             </div>
             <span className="story-label">{story.username}</span>
           </Link>
@@ -142,7 +156,11 @@ export default function Home() {
       <header className="profile-header">
         <div className="profile-top">
           <Link href="/profile" className="profile-pic-link">
-            <div className="profile-pic">{profile.avatar}</div>
+            {profile.avatar ? (
+              <img src={profile.avatar} alt={profile.name} className="profile-pic-img" />
+            ) : (
+              <div className="profile-pic">{profile.avatar || 'BH'}</div>
+            )}
           </Link>
           <div className="profile-stats">
             <div className="stat-item">
@@ -210,7 +228,10 @@ export default function Home() {
               </button>
             </div>
             <div className="post-image" onClick={() => toggleLike(post.id)}>
-              <PostContent type={post.imageUrl} />
+              {post.imageUrl && !imageErrors[post.id] ? (
+                <img src={post.imageUrl} alt={post.location} onError={() => handleImageError(post.id)} />
+              ) : null}
+              <PostContent type={post.contentType} />
             </div>
             <div className="post-content">
               <div className="post-actions">
@@ -251,12 +272,14 @@ export default function Home() {
         .story-ring.has-story::before { background: linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); }
         .story-ring.watched::before { background: rgba(245,239,214,0.2); }
         .story-avatar { width: 58px; height: 58px; border-radius: 50%; background: var(--royal); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 20px; color: var(--cream); position: relative; z-index: 1; }
+        .story-avatar-img { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; position: relative; z-index: 1; }
         .story-ring:nth-child(1) .story-avatar { border: 2px dashed rgba(245,239,214,0.3); }
         .story-label { font-family: var(--font-mono); font-size: 10px; color: rgba(245,239,214,0.6); text-transform: lowercase; max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .profile-header { padding: 24px 20px; border-bottom: 1px solid rgba(245,239,214,0.06); }
         .profile-top { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
         .profile-pic-link { cursor: pointer; }
         .profile-pic { width: 87px; height: 87px; border-radius: 50%; background: var(--royal); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 32px; color: var(--cream); border: 3px solid var(--royal); }
+        .profile-pic-img { width: 87px; height: 87px; border-radius: 50%; object-fit: cover; border: 3px solid var(--royal); }
         .profile-stats { display: flex; gap: 28px; }
         .stat-item { text-align: center; }
         .stat-number { font-family: var(--font-display); font-size: 18px; letter-spacing: 0.02em; color: var(--cream); }
@@ -278,6 +301,7 @@ export default function Home() {
         .post-location { font-size: 11px; color: var(--royal); opacity: 0.6; }
         .post-more { color: var(--royal); opacity: 0.6; cursor: pointer; }
         .post-image { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; background: var(--royal); cursor: pointer; }
+        .post-image img { width: 100%; height: 100%; object-fit: cover; }
         .post-content { padding: 14px; background: var(--cream); }
         .post-actions { display: flex; gap: 16px; margin-bottom: 10px; }
         .post-action { cursor: pointer; transition: transform 0.15s; color: var(--royal); }
@@ -288,6 +312,16 @@ export default function Home() {
         .user-tag { font-weight: 600; }
         .post-view-comments { font-size: 13px; color: var(--royal); opacity: 0.5; display: block; margin-top: 4px; }
         .post-time { font-family: var(--font-mono); font-size: 10px; color: var(--royal); opacity: 0.5; margin-top: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-number-large { font-family: var(--font-display); font-size: 72px; color: var(--cream); }
+        .stat-unit { font-family: var(--font-mono); font-size: 14px; color: var(--cream); opacity: 0.8; text-transform: uppercase; letter-spacing: 0.1em; }
+        .health-icon { font-size: 80px; display: block; margin-bottom: 12px; }
+        .health-title { font-family: var(--font-display); font-size: 28px; color: var(--cream); letter-spacing: 0.15em; }
+        .health-desc { font-size: 14px; color: var(--cream); opacity: 0.8; margin-top: 8px; }
+        .community-badge { display: inline-block; padding: 8px 16px; background: var(--royal); border-radius: 20px; font-family: var(--font-mono); font-size: 12px; color: var(--cream); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; }
+        .community-count { font-family: var(--font-display); font-size: 64px; color: var(--cream); }
+        .community-label { font-family: var(--font-mono); font-size: 14px; color: var(--cream); opacity: 0.8; text-transform: uppercase; letter-spacing: 0.1em; }
+        .mission-quote { font-family: var(--font-display); font-size: 28px; color: var(--cream); line-height: 1.3; text-align: center; max-width: 320px; }
+        .mission-author { font-family: var(--font-mono); font-size: 14px; color: var(--cream); opacity: 0.7; margin-top: 20px; text-transform: uppercase; letter-spacing: 0.15em; }
       `}</style>
     </div>
   )
